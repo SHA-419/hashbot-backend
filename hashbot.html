@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>HashBot - Drift Racer AI</title>
+  <style>
+    /* Your full CSS styles here (from previous message) */
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
+
+    body {
+      margin: 0;
+      background: linear-gradient(135deg, #0d1117 0%, #000000 100%);
+      color: #00ffff;
+      font-family: 'Orbitron', sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    header {
+      background: #0a0a0a;
+      padding: 1.5rem 2rem;
+      text-align: center;
+      font-size: 2.5rem;
+      letter-spacing: 4px;
+      text-shadow: 0 0 8px #00ffff, 0 0 20px #00ffff;
+      border-bottom: 2px solid #00ffff;
+      font-weight: 700;
+      position: relative;
+    }
+
+    header::after {
+      content: '🏁';
+      position: absolute;
+      right: 2rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 2rem;
+      animation: drift 2s infinite alternate ease-in-out;
+      filter: drop-shadow(0 0 4px #00ffff);
+    }
+
+    @keyframes drift {
+      0% { transform: translate(0, -50%) rotate(-5deg);}
+      100% { transform: translate(10px, -50%) rotate(5deg);}
+    }
+
+    #chatbox {
+      flex-grow: 1;
+      padding: 1.5rem 2rem;
+      overflow-y: auto;
+      background: #111;
+      border-left: 6px solid #00ffff;
+      border-right: 6px solid #00ffff;
+      box-shadow: inset 0 0 30px #00ffffcc;
+      font-size: 1.1rem;
+      line-height: 1.4;
+    }
+
+    .user, .bot {
+      max-width: 75%;
+      margin-bottom: 1rem;
+      padding: 0.7rem 1rem;
+      border-radius: 12px;
+      box-shadow: 0 0 6px #00ffff88;
+      word-wrap: break-word;
+    }
+
+    .user {
+      background: #005f5f;
+      margin-left: auto;
+      text-align: right;
+      color: #b0f0f0;
+      border-top-right-radius: 0;
+    }
+
+    .bot {
+      background: #002b2b;
+      color: #00ffff;
+      border-top-left-radius: 0;
+    }
+
+    #input-area {
+      background: #0a0a0a;
+      padding: 1rem 2rem;
+      border-top: 2px solid #00ffff;
+      display: flex;
+      gap: 1rem;
+    }
+
+    #message {
+      flex-grow: 1;
+      font-size: 1.1rem;
+      padding: 0.8rem 1rem;
+      background: #111;
+      color: #00ffff;
+      border: none;
+      border-radius: 20px;
+      box-shadow: 0 0 8px #00ffffaa inset;
+      outline: none;
+      transition: 0.3s ease;
+    }
+
+    #message::placeholder {
+      color: #009999;
+      opacity: 0.7;
+      font-style: italic;
+    }
+
+    #message:focus {
+      box-shadow: 0 0 15px #00ffffdd inset;
+    }
+
+    button#send-btn {
+      background: #00ffff;
+      border: none;
+      color: #000;
+      font-weight: 700;
+      font-size: 1.2rem;
+      padding: 0 1.5rem;
+      border-radius: 30px;
+      cursor: pointer;
+      box-shadow: 0 0 12px #00ffff;
+      transition: background 0.3s ease;
+    }
+
+    button#send-btn:hover {
+      background: #00cccc;
+      box-shadow: 0 0 16px #00cccc;
+    }
+
+    /* Scrollbar */
+    #chatbox::-webkit-scrollbar {
+      width: 8px;
+    }
+    #chatbox::-webkit-scrollbar-track {
+      background: #0a0a0a;
+    }
+    #chatbox::-webkit-scrollbar-thumb {
+      background: #00ffff;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <header>🤖 HashBot - Drift Racer AI</header>
+  <div id="chatbox"></div>
+
+  <div id="input-area">
+    <input type="text" id="message" placeholder="Shift gears & type your message..." autofocus />
+    <button id="send-btn">🏎️ Send</button>
+  </div>
+
+  <script>
+    // Replace with your backend URL
+    const API_URL = 'https://63da-34-148-68-2.ngrok-free.app/chat';
+
+    const chatbox = document.getElementById('chatbox');
+    const input = document.getElementById('message');
+    const sendBtn = document.getElementById('send-btn');
+
+    function appendMessage(sender, text) {
+      const div = document.createElement('div');
+      div.className = sender;
+      div.innerHTML = `<strong>${sender === 'user' ? 'You' : 'HashBot'}:</strong> ${text}`;
+      chatbox.appendChild(div);
+      chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+    // Show welcome message on load
+    appendMessage('bot', 'Hey! My name is HashBot, ask me anything about cars.');
+    input.focus();
+
+    async function sendMessage() {
+      const text = input.value.trim();
+      if (!text) return;
+
+      appendMessage('user', text);
+      input.value = '';
+      input.disabled = true;
+      sendBtn.disabled = true;
+
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text })
+        });
+        const data = await res.json();
+        appendMessage('bot', data.reply);
+      } catch (err) {
+        appendMessage('bot', '⚠️ Error: Could not reach the server.');
+      }
+
+      input.disabled = false;
+      sendBtn.disabled = false;
+      input.focus();
+    }
+
+    sendBtn.addEventListener('click', sendMessage);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+  </script>
+</body>
+</html>
